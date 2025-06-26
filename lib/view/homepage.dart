@@ -8,6 +8,8 @@ class Homepage extends StatefulWidget {
   State<Homepage> createState() => _HomepageState();
 }
 
+
+
 class _HomepageState extends State<Homepage> {
   var namecontroller=TextEditingController();
 
@@ -16,16 +18,35 @@ class _HomepageState extends State<Homepage> {
   List<Note>  note=[];
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    getNote();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("HomePage"),
         backgroundColor: Colors.amber,
       ),
+      body: note.isEmpty?Center(child: Text("Not not yet"),): 
+      ListView.builder(
+        itemCount: note.length,
+        itemBuilder: (context,index){
+           
+            return ListTile(
+
+                title:Text(note[index].name),
+                subtitle: Text(note[index].desc),
+            ); 
+      }),
       floatingActionButton: FloatingActionButton(
         onPressed: (){
           showDialog(context: context, 
           builder: (context)=>AlertDialog(
+            
              title: Text("Add item"),
              content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -59,6 +80,7 @@ class _HomepageState extends State<Homepage> {
                      setState(() {
                        
                      });
+
                      Navigator.pop(context);
                 },
                 child: Text("Add"))
@@ -76,8 +98,25 @@ class _HomepageState extends State<Homepage> {
 
         db.collection("Notes").doc(DateTime.now().toString()).set(
           Note.toMap(note)
+
         ).then((value){
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Add successfuly")));
         });
+        getNote();
+  }
+
+  getNote() async {
+    note.clear();
+    QuerySnapshot snapshot=await FirebaseFirestore.instance.collection("Notes").get();
+
+    for(DocumentSnapshot doc in snapshot.docs){
+      var noteData=doc.data() as Map<String,dynamic>;
+
+      note.add(Note.fromMap(noteData));
+    }
+
+    setState(() {
+      
+    });
   }
 }
