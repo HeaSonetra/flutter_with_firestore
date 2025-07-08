@@ -8,7 +8,7 @@ class AppPages {
   static final pages = [
     GetPage(
       name: AppRoutes.HOME,
-      page: () => const HomeScreen(),
+      page: () =>  HomeScreen(),
       // Use a binding to initialize controllers when the route is loaded
       binding: BindingsBuilder(() {
         Get.put(CartController()); // CartController is global

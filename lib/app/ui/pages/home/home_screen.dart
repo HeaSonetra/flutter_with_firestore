@@ -8,19 +8,29 @@ import '../../widgets/loading_spinner.dart';
 import '../product_details/product_details_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  HomeScreen({super.key}); // Remove `const` since we're adding state
+
+  final ProductController productController = Get.put(ProductController());
+  final ScrollController _scrollController = ScrollController();
+
+  void _scrollListener() {
+    if (_scrollController.position.pixels ==
+        _scrollController.position.maxScrollExtent) {
+      // Refresh when reached bottom
+      productController.fetchProducts(); // Or your refresh logic
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Initialize ProductController
-    final ProductController productController = Get.put(ProductController());
+    _scrollController.addListener(_scrollListener);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Discover'),
         actions: const [
-           CartIconBadge(),
-           SizedBox(width: 16),
+          CartIconBadge(),
+          SizedBox(width: 16),
         ],
       ),
       body: Obx(() {
@@ -32,55 +42,64 @@ class HomeScreen extends StatelessWidget {
           return const Center(child: Text('No products found.'));
         }
 
-        return GridView.builder(
-          padding: const EdgeInsets.all(16),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            childAspectRatio: 0.7,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-          ),
-          itemCount: productController.products.length,
-          itemBuilder: (context, index) {
-            final product = productController.products[index];
-            return GestureDetector(
-              onTap: () => Get.to(() => ProductDetailsScreen(product: product)),
-              child: Card(
-                clipBehavior: Clip.antiAlias,
-                elevation: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      child: CachedNetworkImage(
-                        imageUrl: product.imageUrl,
-                        fit: BoxFit.cover,
-                        placeholder: (context, url) => const LoadingSpinner(),
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.error),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Text(
-                        product.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                      child: Text('\$${product.price.toStringAsFixed(2)}'),
-                    ),
-                    const SizedBox(height: 8),
-                  ],
-                ),
-              ),
-            );
+        return RefreshIndicator(
+          onRefresh: () async {
+            productController.fetchProducts();
           },
+          child: GridView.builder(
+            controller: _scrollController,
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 0.7,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: productController.products.length,
+            itemBuilder: (context, index) {
+              final product = productController.products[index];
+              return GestureDetector(
+                onTap: () => Get.to(() => ProductDetailsScreen(product: product)),
+                child: Card(
+                  clipBehavior: Clip.antiAlias,
+                  elevation: 2,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: CachedNetworkImage(
+                          imageUrl: product.imageUrl,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) =>
+                              const LoadingSpinner(),
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.error),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Text(
+                          product.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                        child:
+                            Text('\$${product.price.toStringAsFixed(2)}'),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
         );
       }),
     );
   }
+  
 }
